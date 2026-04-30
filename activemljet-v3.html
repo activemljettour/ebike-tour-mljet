@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#060E14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ActiveMljet">
+<title>ActiveMljet v3.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ── RESET ── */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;}
+html,body{width:100%;height:100%;overflow:hidden;background:#060E14;color:#E8F4F8;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+:root{
+  --sea:#0077B6;--sea-l:#00B4D8;--sea-d:#03045E;
+  --pine:#2D5A27;--pine-l:#52B788;--pine-m:#40916C;
+  --sand:#F4D58D;--coral:#EF233C;--amber:#F48C06;
+  --bg:#060E14;--bg2:#0D1B2A;--bg3:#162032;
+  --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.18);
+  --muted:#5E8A99;--muted2:#8DAAB5;
+  --r:16px;--rs:10px;
+}
+
+/* ── SPLASH ── */
+#splash{
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;
+  background:radial-gradient(ellipse at 50% 100%,#0D2B1F 0%,#041520 55%,#02080E 100%);
+  display:-webkit-box;display:-ms-flexbox;display:flex;
+  -webkit-box-orient:vertical;-webkit-box-direction:normal;
+  -ms-flex-direction:column;flex-direction:column;
+  -webkit-box-align:center;-ms-flex-align:center;align-items:center;
+  -webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;
+  -webkit-transition:opacity 0.7s ease,transform 0.7s ease;
+  transition:opacity 0.7s ease,-webkit-transform 0.7s ease,transform 0.7s ease;
+}
+#splash.out{opacity:0;-webkit-transform:scale(1.04);transform:scale(1.04);pointer-events:none;}
+
+.s-wave{position:absolute;bottom:0;left:0;right:0;height:180px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 180'%3E%3Cpath fill='rgba(0,119,182,0.12)' d='M0,80 C360,160 720,0 1080,80 C1260,120 1380,60 1440,80 L1440,180 L0,180Z'/%3E%3C/svg%3E") no-repeat bottom/100%;
+  pointer-events:none;}
+.s-island{width:200px;height:76px;margin-bottom:22px;}
+.s-logo{font-family:'Playfair Display',serif;font-size:2.8rem;letter-spacing:-1px;color:#fff;text-align:center;line-height:1;margin-bottom:5px;}
+.s-logo span{color:#52B788;font-style:italic;}
+.s-tag{font-family:'Space Mono',monospace;font-size:0.56rem;letter-spacing:5px;color:#F4D58D;text-transform:uppercase;opacity:0.8;margin-bottom:24px;}
+.lang-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:8px;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;margin-bottom:24px;-ms-flex-wrap:wrap;flex-wrap:wrap;}
+.lbtn{
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);
+  border-radius:12px;padding:10px 18px;color:rgba(255,255,255,0.72);
+  font-family:'DM Sans',sans-serif;font-size:0.84rem;font-weight:600;
+  cursor:pointer;display:-webkit-box;display:-ms-flexbox;display:flex;
+  -webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:6px;
+  -webkit-transition:all 0.18s;transition:all 0.18s;
+  -webkit-appearance:none;appearance:none;outline:none;
+  min-width:72px;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;
+}
+.lbtn.on{background:var(--sea);border-color:var(--sea-l);color:#fff;box-shadow:0 4px 16px rgba(0,119,182,0.5);}
+.lbtn:active{opacity:0.75;-webkit-transform:scale(0.95);transform:scale(0.95);}
+.s-btn{
+  background:-webkit-linear-gradient(315deg,var(--sea),var(--sea-l));
+  background:linear-gradient(135deg,var(--sea),var(--sea-l));
+  color:#fff;border:none;padding:16px 52px;border-radius:50px;
+  font-family:'DM Sans',sans-serif;font-size:1.05rem;font-weight:700;
+  cursor:pointer;box-shadow:0 8px 30px rgba(0,119,182,0.5);
+  -webkit-transition:opacity 0.15s;transition:opacity 0.15s;
+  -webkit-appearance:none;appearance:none;outline:none;
+  display:block;width:auto;
+}
+.s-btn:active{opacity:0.85;}
+
+/* ── APP SHELL ── */
+#app{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  display:none;
+  -webkit-box-orient:vertical;-webkit-box-direction:normal;
+  -ms-flex-direction:column;flex-direction:column;
+}
+#app.show{display:-webkit-box;display:-ms-flexbox;display:flex;}
+
+/* ── HEADER ── */
+.hdr{
+  background:rgba(6,14,20,0.96);
+  border-bottom:1px solid var(--border);
+  padding:11px 13px 8px;
+  -webkit-box-flex:0;-ms-flex-positive:0;flex-grow:0;flex-shrink:0;
+  z-index:50;
+}
+.hdr-r1{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between;margin-bottom:8px;}
+.h-logo{font-family:'Playfair Display',serif;font-size:1.22rem;letter-spacing:-0.5px;}
+.h-logo span{color:#52B788;font-style:italic;}
+.h-right{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:6px;}
+.h-lang{display:-webkit-box;display:-ms-flexbox;display:flex;gap:3px;}
+.hlb{
+  background:rgba(255,255,255,0.07);border:1px solid var(--border);
+  border-radius:7px;padding:4px 8px;color:var(--muted2);
+  font-size:0.6rem;font-weight:700;cursor:pointer;
+  font-family:'Space Mono',monospace;-webkit-appearance:none;appearance:none;outline:none;
+  -webkit-transition:all 0.15s;transition:all 0.15s;
+}
+.hlb.on{background:var(--sea);border-color:var(--sea-l);color:#fff;}
+.hlb:active{opacity:0.7;}
+.gps-pill{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-family:'Space Mono',monospace;font-size:0.57rem;color:#F4D58D;white-space:nowrap;}
+.gdot{width:7px;height:7px;border-radius:50%;background:#333;-webkit-transition:background 0.3s;transition:background 0.3s;}
+.gdot.on{background:#52B788;-webkit-animation:gp 1.8s infinite;animation:gp 1.8s infinite;}
+@-webkit-keyframes gp{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes gp{0%,100%{opacity:1}50%{opacity:0.4}}
+.sos-btn{
+  background:-webkit-linear-gradient(315deg,#C1121F,#EF233C);
+  background:linear-gradient(135deg,#C1121F,#EF233C);
+  color:#fff;border:none;border-radius:20px;padding:5px 11px;
+  font-family:'Space Mono',monospace;font-size:0.57rem;font-weight:700;
+  cursor:pointer;box-shadow:0 0 12px rgba(239,35,60,0.4);
+  -webkit-appearance:none;appearance:none;white-space:nowrap;outline:none;
+}
+.sos-btn:active{opacity:0.8;}
+
+/* ── TABS ── */
+.tabs{display:-webkit-box;display:-ms-flexbox;display:flex;gap:3px;background:rgba(0,0,0,0.3);border-radius:11px;padding:3px;}
+.tab{
+  -webkit-box-flex:1;-ms-flex:1;flex:1;
+  display:-webkit-box;display:-ms-flexbox;display:flex;
+  -webkit-box-orient:vertical;-webkit-box-direction:normal;
+  -ms-flex-direction:column;flex-direction:column;
+  -webkit-box-align:center;-ms-flex-align:center;align-items:center;
+  gap:2px;padding:6px 2px;border:none;background:transparent;
+  color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.6rem;font-weight:600;
+  border-radius:8px;cursor:pointer;-webkit-transition:all 0.2s;transition:all 0.2s;
+  -webkit-appearance:none;appearance:none;outline:none;
+}
+.tab .ti{font-size:0.9rem;}
+.tab.on{background:-webkit-linear-gradient(315deg,var(--sea),rgba(0,180,216,0.85));background:linear-gradient(135deg,var(--sea),rgba(0,180,216,0.85));color:#fff;}
+.tab:active{opacity:0.75;}
+
+/* ── PANELS CONTAINER ── */
+.panels{
+  -webkit-box-flex:1;-ms-flex:1;flex:1;
+  overflow:hidden;position:relative;
+}
+.panel{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  display:none;padding-bottom:28px;
+}
+.panel.on{display:block;}
+
+/* ── MAP ── */
+.map-wrap{position:relative;height:320px;overflow:hidden;background:#041520;border-bottom:1px solid var(--border);}
+#leaflet-map{width:100%;height:100%;}
+/* Leaflet overrides */
+.leaflet-container{background:#041520!important;font-family:'DM Sans',sans-serif!important;}
+.leaflet-control-attribution{background:rgba(6,14,20,0.72)!important;color:rgba(255,255,255,0.35)!important;font-size:8px!important;line-height:14px!important;}
+.leaflet-control-attribution a{color:rgba(255,255,255,0.45)!important;}
+.leaflet-control-zoom a{background:rgba(6,14,20,0.88)!important;color:#00B4D8!important;border:1px solid rgba(0,180,216,0.3)!important;font-weight:700!important;}
+.leaflet-bar{box-shadow:0 2px 8px rgba(0,0,0,0.45)!important;border-radius:9px!important;overflow:hidden!important;}
+.leaflet-bar a{border-bottom:1px solid rgba(255,255,255,0.1)!important;}
+.cp-marker{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2.5px solid rgba(255,255,255,0.95);box-shadow:0 2px 10px rgba(0,0,0,0.6),0 0 0 3px rgba(255,255,255,0.18);cursor:pointer;-webkit-transition:transform 0.15s;transition:transform 0.15s;}
+.cp-marker:active{-webkit-transform:scale(0.9);transform:scale(0.9);}
+.user-marker-dot{width:18px;height:18px;background:#fff;border-radius:50%;border:3px solid #52B788;box-shadow:0 0 0 5px rgba(82,183,136,0.25),0 0 14px rgba(82,183,136,0.7);}
+.leaflet-popup-content-wrapper{background:rgba(10,22,36,0.97)!important;color:#E8F4F8!important;border:1px solid rgba(0,180,216,0.35)!important;border-radius:13px!important;box-shadow:0 8px 28px rgba(0,0,0,0.5)!important;}
+.leaflet-popup-tip{background:rgba(10,22,36,0.97)!important;}
+.leaflet-popup-close-button{color:rgba(255,255,255,0.5)!important;font-size:18px!important;padding:5px 8px!important;top:4px!important;right:4px!important;}
+.leaflet-popup-content{margin:12px 14px!important;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.5;}
+
+/* Weather */
+.wx{position:absolute;top:9px;right:9px;z-index:10;background:rgba(6,14,20,0.88);border:1px solid rgba(0,180,216,0.3);border-radius:13px;padding:8px 11px;min-width:106px;}
+.wx-t{font-family:'Space Mono',monospace;font-size:1.22rem;font-weight:700;color:#00B4D8;line-height:1;}
+.wx-r{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:4px;font-size:0.6rem;color:var(--muted2);margin-top:3px;}
+.wx-b{background:rgba(244,140,6,0.15);border:1px solid rgba(244,140,6,0.32);border-radius:6px;padding:2px 6px;font-size:0.52rem;font-weight:700;color:#F48C06;margin-top:4px;display:inline-block;}
+
+/* Stats bar */
+.sbar{display:-webkit-box;display:-ms-flexbox;display:flex;gap:4px;padding:9px 11px;background:rgba(6,14,20,0.97);border-bottom:1px solid var(--border);}
+.sc{-webkit-box-flex:1;-ms-flex:1;flex:1;text-align:center;background:rgba(255,255,255,0.03);border-radius:9px;padding:6px 2px;}
+.sc-v{font-family:'Space Mono',monospace;font-size:0.98rem;font-weight:700;color:#00B4D8;line-height:1;}
+.sc-l{font-size:0.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
+
+/* Progress */
+.prog-wrap{padding:9px 13px 0;}
+.prog-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between;font-size:0.66rem;color:var(--muted);margin-bottom:4px;}
+.prog-bar{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;background:-webkit-linear-gradient(left,var(--sea),#52B788);background:linear-gradient(to right,var(--sea),#52B788);border-radius:3px;-webkit-transition:width 0.9s ease;transition:width 0.9s ease;width:0%;}
+
+/* CP Alert */
+.cp-al{margin:9px 13px 0;background:rgba(45,90,39,0.25);border:1px solid rgba(82,183,136,0.38);border-radius:var(--r);padding:12px 13px;display:-webkit-box;display:-ms-flexbox;display:flex;gap:9px;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;}
+.cp-al-ico{font-size:1.5rem;background:rgba(0,0,0,0.2);padding:5px;border-radius:9px;-webkit-box-flex:0;-ms-flex-positive:0;flex-grow:0;flex-shrink:0;}
+.cp-al-ttl{font-weight:700;font-size:0.84rem;color:#52B788;}
+.cp-al-txt{font-size:0.7rem;color:var(--muted2);margin-top:2px;line-height:1.4;}
+
+/* Buttons */
+.ctrl{padding:10px 13px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:8px;}
+.btn{
+  width:100%;padding:13px;border-radius:var(--r);border:none;
+  font-family:'DM Sans',sans-serif;font-size:0.92rem;font-weight:700;
+  cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;
+  display:-webkit-box;display:-ms-flexbox;display:flex;
+  -webkit-box-align:center;-ms-flex-align:center;align-items:center;
+  -webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;
+  gap:7px;-webkit-transition:opacity 0.15s;transition:opacity 0.15s;
+}
+.btn:active{opacity:0.8;}
+.btn-go{background:-webkit-linear-gradient(315deg,var(--pine),var(--pine-m));background:linear-gradient(135deg,var(--pine),var(--pine-m));color:#fff;box-shadow:0 4px 18px rgba(45,90,39,0.45);}
+.ctrl-row{display:-webkit-box;display:-ms-flexbox;display:flex;gap:8px;}
+.ctrl-row .btn{-webkit-box-flex:1;-ms-flex:1;flex:1;}
+.btn-pause{background:rgba(255,255,255,0.08);color:#F4D58D;border:1px solid rgba(255,255,255,0.16);}
+.btn-end{background:-webkit-linear-gradient(315deg,#C1121F,#EF233C);background:linear-gradient(135deg,#C1121F,#EF233C);color:#fff;box-shadow:0 4px 16px rgba(239,35,60,0.35);}
+.btn-map{background:rgba(66,133,244,0.12);color:#4285F4;border:1px solid rgba(66,133,244,0.28);font-size:0.8rem;padding:10px;}
+
+/* Elevation */
+.elev-wrap{margin:9px 13px 0;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--r);padding:11px;}
+.elev-title{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:700;}
+.elev-svg{width:100%;height:56px;overflow:visible;}
+
+/* ── SECTION HEADER ── */
+.sec-h{padding:15px 13px 7px;font-family:'Space Mono',monospace;font-size:0.57rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;font-weight:700;}
+
+/* ── GUIDE CARDS ── */
+.g-card{margin:0 13px 9px;background:rgba(13,27,42,0.9);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.g-head{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:9px;padding:12px 13px;background:rgba(0,119,182,0.1);cursor:pointer;}
+.g-head:active{background:rgba(0,119,182,0.18);}
+.g-num{width:30px;height:30px;border-radius:50%;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:700;color:#fff;-webkit-box-flex:0;flex-shrink:0;}
+.g-ttl{font-weight:700;font-size:0.88rem;-webkit-box-flex:1;-ms-flex:1;flex:1;}
+.g-sub{font-size:0.67rem;color:var(--muted2);margin-top:1px;}
+.g-km{font-size:0.63rem;color:#F4D58D;font-family:'Space Mono',monospace;background:rgba(0,0,0,0.3);padding:3px 8px;border-radius:8px;white-space:nowrap;}
+.g-chev{color:var(--muted);font-size:0.7rem;-webkit-transition:-webkit-transform 0.3s;transition:transform 0.3s;margin-left:4px;}
+.g-card.open .g-chev{-webkit-transform:rotate(180deg);transform:rotate(180deg);}
+.g-body{display:none;padding:0 13px 13px;border-top:1px solid var(--border);}
+.g-card.open .g-body{display:block;}
+.g-img{width:100%;height:110px;background:-webkit-linear-gradient(315deg,var(--bg2),var(--bg3));background:linear-gradient(135deg,var(--bg2),var(--bg3));border-radius:var(--rs);margin:10px 0;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:2.8rem;}
+.g-body p{font-size:0.78rem;line-height:1.68;color:rgba(232,244,248,0.85);margin-bottom:7px;}
+.g-hist{font-style:italic;color:#00B4D8;font-size:0.7rem;margin-bottom:7px;}
+.tip-item{font-size:0.74rem;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);}
+.tip-item:last-child{border-bottom:none;}
+.tags{display:-webkit-box;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.tag{background:rgba(0,119,182,0.18);border:1px solid rgba(0,180,216,0.25);border-radius:20px;padding:3px 9px;font-size:0.61rem;color:#00B4D8;font-family:'Space Mono',monospace;}
+.tag.g{background:rgba(45,90,39,0.2);border-color:rgba(82,183,136,0.28);color:#52B788;}
+
+/* ── TOURS ── */
+.tours-hero{height:130px;background:-webkit-linear-gradient(315deg,#03045E,#0077B6 50%,#2D5A27);background:linear-gradient(135deg,#03045E,#0077B6 50%,#2D5A27);display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;}
+.th-ttl{font-family:'Playfair Display',serif;font-size:1.65rem;font-style:italic;color:#fff;}
+.th-sub{font-size:0.58rem;color:#F4D58D;font-family:'Space Mono',monospace;letter-spacing:3px;text-transform:uppercase;margin-top:5px;opacity:0.85;}
+.t-card{margin:0 13px 14px;background:rgba(13,27,42,0.95);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.t-banner{height:140px;position:relative;overflow:hidden;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end;}
+.t-bg{position:absolute;top:0;left:0;right:0;bottom:0;background-size:cover;}
+.t-ov{position:absolute;top:0;left:0;right:0;bottom:0;background:-webkit-linear-gradient(top,transparent 0%,rgba(6,14,20,0.95) 100%);background:linear-gradient(to bottom,transparent 0%,rgba(6,14,20,0.95) 100%);}
+.t-bc{position:relative;z-index:1;padding:11px 13px;width:100%;}
+.t-name{font-family:'Playfair Display',serif;font-size:1.12rem;color:#fff;font-weight:700;}
+.t-sub{font-size:0.69rem;color:rgba(255,255,255,0.65);margin-top:2px;}
+.diff{display:inline-block;padding:3px 9px;border-radius:20px;font-size:0.57rem;font-weight:700;font-family:'Space Mono',monospace;margin-bottom:4px;}
+.d-easy{background:rgba(82,183,136,0.3);border:1px solid rgba(82,183,136,0.5);color:#52B788;}
+.d-med{background:rgba(244,140,6,0.2);border:1px solid rgba(244,140,6,0.4);color:#F48C06;}
+.d-hard{background:rgba(239,35,60,0.2);border:1px solid rgba(239,35,60,0.4);color:#EF233C;}
+.d-expert{background:rgba(150,40,200,0.2);border:1px solid rgba(150,40,200,0.4);color:#C77DFF;}
+.t-stats{display:-webkit-box;display:-ms-flexbox;display:flex;gap:5px;padding:9px 13px;border-bottom:1px solid var(--border);}
+.ts{-webkit-box-flex:1;-ms-flex:1;flex:1;text-align:center;background:rgba(255,255,255,0.03);border-radius:9px;padding:7px 3px;}
+.ts-v{font-family:'Space Mono',monospace;font-size:0.88rem;font-weight:700;color:#00B4D8;line-height:1;}
+.ts-l{font-size:0.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;}
+.t-map-wrap{height:180px;overflow:hidden;position:relative;border-bottom:1px solid var(--border);}
+.t-map-wrap iframe{width:100%;height:100%;border:0;display:block;}
+.t-map-ov{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;background:-webkit-linear-gradient(left,rgba(6,14,20,0.35) 0%,transparent 20%,transparent 80%,rgba(6,14,20,0.35) 100%);background:linear-gradient(to right,rgba(6,14,20,0.35) 0%,transparent 20%,transparent 80%,rgba(6,14,20,0.35) 100%);}
+.t-body{padding:13px;}
+.t-body p{font-size:0.78rem;line-height:1.68;color:rgba(232,244,248,0.82);margin-bottom:9px;}
+.t-stops{list-style:none;}
+.t-stop{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.74rem;}
+.t-stop:last-child{border-bottom:none;}
+.t-dot{width:7px;height:7px;border-radius:50%;background:#00B4D8;-webkit-box-flex:0;flex-shrink:0;}
+.t-go-btn{width:100%;margin-top:11px;padding:13px;border:none;border-radius:var(--r);background:-webkit-linear-gradient(315deg,var(--sea),var(--sea-l));background:linear-gradient(135deg,var(--sea),var(--sea-l));color:#fff;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;-webkit-transition:opacity 0.15s;transition:opacity 0.15s;}
+.t-go-btn:active{opacity:0.8;}
+
+/* Guide card images */
+.g-img-wrap{width:100%;height:170px;border-radius:var(--rs);margin:10px 0;overflow:hidden;position:relative;background:#060E14;}
+.g-img-photo{width:100%;height:100%;object-fit:cover;display:block;}
+.g-img-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;position:absolute;top:0;left:0;}
+
+/* Tour banner real photos */
+.t-banner{height:155px;position:relative;overflow:hidden;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:end;-ms-flex-align:end;align-items:flex-end;}
+.t-bg{position:absolute;top:0;left:0;right:0;bottom:0;background-size:cover!important;background-position:center!important;z-index:1;}
+.t-bg-fallback{position:absolute;top:0;left:0;right:0;bottom:0;z-index:0;}
+.t-ov{position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(to bottom,rgba(6,14,20,0.08) 0%,rgba(6,14,20,0.92) 100%);z-index:2;}
+.t-bc{position:relative;z-index:3;padding:11px 13px;width:100%;}
+
+/* ── NATURE ── */
+.nat-hero{height:145px;background:-webkit-linear-gradient(315deg,#03045E,#0077B6 50%,#2D5A27);background:linear-gradient(135deg,#03045E,#0077B6 50%,#2D5A27);display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;}
+.nh-ttl{font-family:'Playfair Display',serif;font-size:1.75rem;font-style:italic;color:#fff;}
+.nh-sub{font-size:0.58rem;color:#F4D58D;font-family:'Space Mono',monospace;letter-spacing:3px;text-transform:uppercase;margin-top:5px;opacity:0.85;}
+.warn{margin:0 13px 9px;border-radius:var(--r);padding:13px 13px 13px 14px;display:-webkit-box;display:-ms-flexbox;display:flex;gap:10px;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;}
+.warn.water{background:rgba(0,119,182,0.18);border:1px solid rgba(0,180,216,0.35);}
+.warn.heat{background:rgba(244,140,6,0.15);border:1px solid rgba(244,140,6,0.4);}
+.warn-ico{font-size:1.5rem;-webkit-box-flex:0;flex-shrink:0;}
+.warn-ttl{font-weight:700;font-size:0.85rem;color:#fff;margin-bottom:4px;}
+.warn-txt{font-size:0.74rem;color:rgba(232,244,248,0.82);line-height:1.55;}
+.stat-grid{display:-ms-grid;display:grid;-ms-grid-columns:1fr 8px 1fr;grid-template-columns:1fr 1fr;gap:8px;margin:0 13px 9px;}
+.sg{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--rs);padding:13px;text-align:center;}
+.sg-v{font-family:'Space Mono',monospace;font-size:1.08rem;color:#00B4D8;font-weight:700;}
+.sg-l{font-size:0.57rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
+.n-card{margin:0 13px 9px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--r);padding:13px;}
+.n-ttl{font-family:'Playfair Display',serif;font-size:0.95rem;color:#F4D58D;margin-bottom:6px;}
+.n-card p{font-size:0.76rem;line-height:1.68;color:rgba(232,244,248,0.76);}
+.sp-ul{list-style:none;}
+.sp-li{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.75rem;}
+.sp-li:last-child{border-bottom:none;}
+.sp-ico{font-size:1rem;background:rgba(0,0,0,0.22);padding:5px;border-radius:9px;-webkit-box-flex:0;flex-shrink:0;}
+.sp-n{font-weight:600;}
+.sp-s{font-style:italic;color:var(--muted);font-size:0.66rem;margin-top:2px;}
+
+/* ── STATS ── */
+.big-grid{display:-ms-grid;display:grid;-ms-grid-columns:1fr 8px 1fr;grid-template-columns:1fr 1fr;gap:8px;padding:13px;}
+.bg-box{background:rgba(0,119,182,0.18);border:1px solid rgba(0,180,216,0.2);border-radius:var(--r);padding:16px;text-align:center;}
+.bg-v{font-family:'Space Mono',monospace;font-size:1.75rem;font-weight:700;color:#00B4D8;line-height:1;}
+.bg-u{font-size:0.7rem;color:var(--muted);}
+.bg-l{font-size:0.57rem;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.vis-list{padding:0 13px;}
+.vis-row{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.vis-row:last-child{border-bottom:none;}
+.vis-ball{width:27px;height:27px;border-radius:50%;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;font-size:0.65rem;font-weight:700;font-family:'Space Mono',monospace;-webkit-box-flex:0;flex-shrink:0;}
+.vis-ball.d{background:var(--pine-m);color:#fff;}
+.vis-ball.p{background:rgba(255,255,255,0.07);color:var(--muted);}
+.vis-name{font-size:0.82rem;font-weight:600;-webkit-box-flex:1;-ms-flex:1;flex:1;}
+.vis-sub{font-size:0.65rem;color:var(--muted);margin-top:1px;}
+.vis-km{font-size:0.65rem;color:#F4D58D;font-family:'Space Mono',monospace;background:rgba(0,0,0,0.3);padding:3px 7px;border-radius:7px;white-space:nowrap;}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;top:-90px;left:13px;right:13px;z-index:9000;
+  background:rgba(13,27,42,0.97);border:1px solid rgba(82,183,136,0.3);border-radius:var(--r);
+  padding:13px;box-shadow:0 10px 36px rgba(0,0,0,0.5);
+  display:-webkit-box;display:-ms-flexbox;display:flex;gap:9px;-webkit-box-align:center;-ms-flex-align:center;align-items:center;
+  -webkit-transition:top 0.45s cubic-bezier(0.34,1.56,0.64,1);
+  transition:top 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.show{top:76px;}
+.toast-ico{font-size:1.8rem;background:rgba(0,0,0,0.2);padding:7px;border-radius:10px;-webkit-box-flex:0;flex-shrink:0;}
+.toast-ttl{font-weight:700;font-size:0.85rem;}
+.toast-txt{font-size:0.7rem;color:rgba(232,244,248,0.72);margin-top:1px;}
+
+/* ── SOS MODAL ── */
+.sos-modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9500;background:rgba(0,0,0,0.82);display:none;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:24px;}
+.sos-modal.open{display:-webkit-box;display:-ms-flexbox;display:flex;}
+.sos-box{background:#140305;border:2px solid rgba(239,35,60,0.5);border-radius:22px;padding:26px 22px;text-align:center;max-width:330px;width:100%;box-shadow:0 0 60px rgba(239,35,60,0.3);}
+.sos-icon-big{font-size:3.2rem;margin-bottom:10px;-webkit-animation:sospulse 1.5s ease-in-out infinite;animation:sospulse 1.5s ease-in-out infinite;}
+@-webkit-keyframes sospulse{0%,100%{-webkit-transform:scale(1);transform:scale(1)}50%{-webkit-transform:scale(1.08);transform:scale(1.08)}}
+@keyframes sospulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.sos-ttl{font-family:'Playfair Display',serif;font-size:1.45rem;color:#EF233C;margin-bottom:5px;}
+.sos-coords{font-family:'Space Mono',monospace;font-size:0.67rem;color:var(--muted2);margin-bottom:9px;background:rgba(255,255,255,0.05);padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);white-space:pre-line;line-height:1.5;}
+.sos-tel{color:#EF233C;font-family:'Space Mono',monospace;font-size:0.7rem;margin-bottom:6px;}
+.sos-status{font-size:0.79rem;color:rgba(232,244,248,0.8);margin-bottom:13px;line-height:1.5;}
+.sos-prog-wrap{height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:17px;}
+.sos-prog-fill{height:100%;background:-webkit-linear-gradient(left,#EF233C,#ff6b6b);background:linear-gradient(to right,#EF233C,#ff6b6b);border-radius:3px;width:0%;-webkit-transition:width 0.08s;transition:width 0.08s;}
+.sos-done{display:none;color:#52B788;font-weight:700;font-size:0.87rem;margin-bottom:13px;}
+.sos-done.show{display:block;}
+.sos-cancel{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);padding:10px 28px;border-radius:50px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.84rem;-webkit-appearance:none;appearance:none;outline:none;}
+.sos-cancel:active{opacity:0.75;}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="s-wave"></div>
+  <svg class="s-island" viewBox="0 0 200 76" fill="none">
+    <rect width="200" height="76" fill="rgba(0,119,182,0.28)" rx="9"/>
+    <path d="M15,50 Q36,20 67,24 Q90,9 122,22 Q152,13 178,35 Q188,50 172,57 Q142,70 103,67 Q63,72 24,63Z" fill="#2D5A27" opacity="0.9"/>
+    <ellipse cx="96" cy="44" rx="23" ry="11" fill="rgba(0,119,182,0.85)"/>
+    <ellipse cx="74" cy="49" rx="9" ry="5" fill="rgba(0,180,216,0.75)"/>
+    <rect x="93" y="40" width="5" height="5" fill="rgba(244,213,141,0.9)" rx="1"/>
+    <circle cx="50" cy="36" r="2.8" fill="#52B788"/>
+    <circle cx="124" cy="31" r="2.8" fill="#52B788"/>
+    <circle cx="153" cy="40" r="2.8" fill="#52B788"/>
+  </svg>
+  <div class="s-logo">Active<span>Mljet</span></div>
+  <div class="s-tag">eBike Adventure OS · v3.0</div>
+  <div class="lang-row">
+    <button class="lbtn on" data-lang="en">🇬🇧 EN</button>
+    <button class="lbtn" data-lang="hr">🇭🇷 HR</button>
+    <button class="lbtn" data-lang="sl">🇸🇮 SL</button>
+    <button class="lbtn" data-lang="de">🇩🇪 DE</button>
+  </div>
+  <button class="s-btn" id="s-btn">🚴 Start Adventure</button>
+</div>
+
+<!-- SOS MODAL -->
+<div class="sos-modal" id="sos-modal">
+  <div class="sos-box">
+    <div class="sos-icon-big">🆘</div>
+    <div class="sos-ttl">Emergency SOS</div>
+    <div class="sos-coords" id="sos-coords">GPS: 42.74360° N, 17.52800° E
+Accuracy: ±8m · NP Mljet</div>
+    <div class="sos-tel">NP Mljet Emergency: +385 20 744 041</div>
+    <div class="sos-status" id="sos-status">📡 Transmitting GPS coordinates...<br>🚨 Alerting NP Mljet Rescue Service</div>
+    <div class="sos-prog-wrap"><div class="sos-prog-fill" id="sos-prog"></div></div>
+    <div class="sos-done" id="sos-done">✅ SOS Sent — Help is on the way!</div>
+    <button class="sos-cancel" id="sos-cancel">✕ Cancel</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-ico" id="t-ico">📍</div>
+  <div>
+    <div class="toast-ttl" id="t-ttl">Checkpoint!</div>
+    <div class="toast-txt" id="t-txt">You've arrived.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-r1">
+      <div class="h-logo">Active<span>Mljet</span></div>
+      <div class="h-right">
+        <div class="h-lang">
+          <button class="hlb on" data-lang="en">EN</button>
+          <button class="hlb" data-lang="hr">HR</button>
+          <button class="hlb" data-lang="sl">SL</button>
+          <button class="hlb" data-lang="de">DE</button>
+        </div>
+        <div class="gps-pill"><div class="gdot" id="gdot"></div><span id="g-lbl">GPS off</span></div>
+        <button class="sos-btn" id="sos-open">🆘 SOS</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-panel="tracker"><span class="ti">🗺️</span><span data-k="t_track">Tracker</span></button>
+      <button class="tab" data-panel="guide"><span class="ti">📍</span><span data-k="t_guide">Guide</span></button>
+      <button class="tab" data-panel="tours"><span class="ti">🚵</span><span data-k="t_tours">Tours</span></button>
+      <button class="tab" data-panel="nature"><span class="ti">🌿</span><span data-k="t_nature">Nature</span></button>
+      <button class="tab" data-panel="stats"><span class="ti">📊</span><span data-k="t_stats">Stats</span></button>
+    </div>
+  </div>
+
+  <div class="panels">
+
+    <!-- TRACKER -->
+    <div class="panel on" id="panel-tracker">
+      <div class="map-wrap">
+        <div class="wx">
+          <div class="wx-t" id="wx-t">27°C</div>
+          <div class="wx-r">💨 <span id="wx-w">14 km/h NW</span></div>
+          <div class="wx-r">☀️ <span id="wx-u">UV 8 · High</span></div>
+          <div class="wx-b" id="wx-b">⚠️ DRINK WATER</div>
+        </div>
+        <div id="leaflet-map"></div>
+      </div>
+      <div class="sbar">
+        <div class="sc"><div class="sc-v" id="v-spd">0.0</div><div class="sc-l">km/h</div></div>
+        <div class="sc"><div class="sc-v" id="v-dst">0.0</div><div class="sc-l">km</div></div>
+        <div class="sc"><div class="sc-v" id="v-tim">00:00</div><div class="sc-l" data-k="l_time">time</div></div>
+        <div class="sc"><div class="sc-v" id="v-cps">0/6</div><div class="sc-l" data-k="l_stops">stops</div></div>
+        <div class="sc"><div class="sc-v" id="v-bat" style="color:#52B788">100%</div><div class="sc-l">🔋</div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-row"><span data-k="l_progress">Tour progress</span><span id="prog-pct">0%</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+      </div>
+      <div id="cp-alert-wrap" style="display:none">
+        <div class="cp-al">
+          <div class="cp-al-ico" id="ca-ico">📍</div>
+          <div>
+            <div class="cp-al-ttl" id="ca-ttl">Stop</div>
+            <div class="cp-al-txt" id="ca-txt">Open Guide tab for details</div>
+          </div>
+        </div>
+      </div>
+      <div class="ctrl">
+        <button class="btn btn-go" id="btn-go">🚴 Start eBike Tour</button>
+        <div class="ctrl-row" id="ctrl-active" style="display:none">
+          <button class="btn btn-pause" id="btn-pause">⏸ Pause</button>
+          <button class="btn btn-end" id="btn-end">⏹ End Tour</button>
+        </div>
+        <button class="btn btn-map" id="btn-map">🗺️ Open in Google Maps</button>
+      </div>
+      <div class="elev-wrap">
+        <div class="elev-title" data-k="l_elev">🏔 ELEVATION PROFILE · ~12 km</div>
+        <svg class="elev-svg" viewBox="0 0 350 56" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#52B788" stop-opacity="0.5"/>
+              <stop offset="100%" stop-color="#52B788" stop-opacity="0.03"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,51 L0,36 Q20,31 38,34 Q68,26 100,14 Q130,5 155,11 Q180,16 200,26 Q220,31 250,23 Q280,14 300,16 Q320,14 350,19 L350,51Z" fill="url(#eg)"/>
+          <path d="M0,36 Q20,31 38,34 Q68,26 100,14 Q130,5 155,11 Q180,16 200,26 Q220,31 250,23 Q280,14 300,16 Q320,14 350,19" stroke="#52B788" stroke-width="1.8" fill="none"/>
+          <circle cx="0" cy="36" r="4" fill="#E05A3A"/>
+          <circle cx="113" cy="12" r="4" fill="#0096C7"/>
+          <circle cx="155" cy="11" r="4" fill="#C5A03E"/>
+          <circle cx="202" cy="26" r="4" fill="#0096C7"/>
+          <circle cx="258" cy="23" r="4" fill="#52B788"/>
+          <circle cx="350" cy="19" r="4" fill="#9B7FE0"/>
+          <text x="3" y="54" fill="rgba(255,255,255,0.28)" font-size="6.5" font-family="monospace">0m</text>
+          <text x="292" y="54" fill="rgba(255,255,255,0.28)" font-size="6.5" font-family="monospace">253m</text>
+          <circle id="elev-ind" cx="0" cy="36" r="5" fill="#fff" stroke="#00B4D8" stroke-width="2" style="display:none"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- GUIDE -->
+    <div class="panel" id="panel-guide">
+      <div class="sec-h" data-k="l_guide_h">🚴 EBIKE TOUR · STOP GUIDE</div>
+      <div id="guide-list"></div>
+    </div>
+
+    <!-- TOURS -->
+    <div class="panel" id="panel-tours">
+      <div class="tours-hero">
+        <div class="th-ttl" data-k="l_tours_ttl">eBike Adventures</div>
+        <div class="th-sub">National Park Mljet · 4 Routes</div>
+      </div>
+      <div class="sec-h" style="padding-top:13px" data-k="l_tours_pick">Choose Your Route</div>
+      <div id="tours-list"></div>
+    </div>
+
+    <!-- NATURE -->
+    <div class="panel" id="panel-nature">
+      <div class="nat-hero">
+        <div class="nh-ttl">Island of Mljet</div>
+        <div class="nh-sub" data-k="l_nat_sub">National Park · Adriatic Sea · Croatia</div>
+      </div>
+      <div class="sec-h" style="padding-top:13px" data-k="l_safety">⚠️ Safety & Essential Tips</div>
+      <div class="warn water">
+        <div class="warn-ico">💧</div>
+        <div>
+          <div class="warn-ttl" data-k="l_water_t">Water Warning — Carry 2L Minimum</div>
+          <div class="warn-txt" data-k="l_water_x">No drinking water sources on the lake cycling route. Bring at least 2 litres per person. Refill only at Pomena (Hotel Odysseus) or Polače harbour. Dehydration risk HIGH in summer.</div>
+        </div>
+      </div>
+      <div class="warn heat">
+        <div class="warn-ico">🌡️</div>
+        <div>
+          <div class="warn-ttl" data-k="l_heat_t">Heat Warning — Goveđari Interior</div>
+          <div class="warn-txt" data-k="l_heat_x">The interior around Goveđari has NO sea breeze. Temperatures regularly exceed 38°C with high humidity. Ride before 10:00 or after 17:00. Heat stroke: dizziness, nausea, confusion.</div>
+        </div>
+      </div>
+      <div class="sec-h" data-k="l_lakes">The Lakes</div>
+      <div class="stat-grid">
+        <div class="sg"><div class="sg-v">145 ha</div><div class="sg-l">Veliko jezero</div></div>
+        <div class="sg"><div class="sg-v">24 ha</div><div class="sg-l">Malo jezero</div></div>
+        <div class="sg"><div class="sg-v">47 m</div><div class="sg-l" data-k="l_depth">Max depth</div></div>
+        <div class="sg"><div class="sg-v">90%</div><div class="sg-l" data-k="l_forest">Forest cover</div></div>
+      </div>
+      <div class="sec-h" data-k="l_species">Protected Marine Species</div>
+      <div class="n-card">
+        <ul class="sp-ul">
+          <li class="sp-li"><span class="sp-ico">🪼</span><div><div class="sp-n" data-k="sp1">Endemic Jellyfish — found nowhere else on Earth</div><div class="sp-s">Aurelia relicta · up to 55 cm · harmless to swimmers</div></div></li>
+          <li class="sp-li"><span class="sp-ico">🪸</span><div><div class="sp-n" data-k="sp2">World's Largest Bushy Coral Reef</div><div class="sp-s">Cladocora caespitosa · 650 m² · depth 4–18 m</div></div></li>
+          <li class="sp-li"><span class="sp-ico">🦪</span><div><div class="sp-n" data-k="sp3">Noble Pen Shell ⛔ STRICTLY PROTECTED</div><div class="sp-s">Pinna nobilis · up to 1 m · largest bivalve in Adriatic</div></div></li>
+          <li class="sp-li"><span class="sp-ico">🐚</span><div><div class="sp-n" data-k="sp4">Scallop — largest Adriatic population in Malo jezero</div><div class="sp-s">Pecten jacobaeus · 8–15 cm</div></div></li>
+          <li class="sp-li"><span class="sp-ico">🪨</span><div><div class="sp-n" data-k="sp5">Date Mussel ⛔ STRICTLY PROTECTED</div><div class="sp-s">Litophaga litophaga · lives ~80 years</div></div></li>
+        </ul>
+      </div>
+      <div class="sec-h" data-k="l_veg">Forest Vegetation</div>
+      <div class="n-card">
+        <div class="n-ttl">🌲 Aleppo Pine</div>
+        <p data-k="l_pine">Dominant tree covering most of the park. Brought to Mljet by the ancient Greeks. Bluish-green needles 6–10 cm, grows to 20 m. Dense around both lake shores.</p>
+        <div class="tags" style="margin-top:8px"><span class="tag g">Pinus halepensis</span><span class="tag" data-k="l_greek">Greek heritage</span></div>
+      </div>
+      <div class="n-card">
+        <div class="n-ttl">🌳 <span data-k="l_oak_t">Holly Oak (Holm Oak)</span></div>
+        <p data-k="l_oak">Evergreen oak with broad spherical crown, dark grey cracked bark, leathery leaves to 7 cm. Produces acorns. Key areas: Velika dolina, Valakija, Planjak, Knežepolje.</p>
+        <div class="tags" style="margin-top:8px"><span class="tag g">Quercus ilex</span></div>
+      </div>
+      <div class="sec-h" data-k="l_hist">Brief History</div>
+      <div class="n-card">
+        <div class="n-ttl" data-k="l_hist_t">From Illyrians to Croatia</div>
+        <p data-k="l_hist_x">Inhabited since the 2nd millennium BC. Romans built the third largest Adriatic palace here. In 1151 Benedictine monks built St. Mary's Monastery. The island passed through Republic of Ragusa, Napoleonic France, Austria-Hungary, Italy, Yugoslavia, and became part of Croatia. National Park since 1960.</p>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="panel" id="panel-stats">
+      <div class="sec-h" data-k="l_stats_h">Tour Summary</div>
+      <div class="big-grid">
+        <div class="bg-box"><div class="bg-v" id="fs-d">0.0</div><div class="bg-u">km</div><div class="bg-l" data-k="l_dist">Distance</div></div>
+        <div class="bg-box"><div class="bg-v" id="fs-t">0:00</div><div class="bg-l" data-k="l_ridetime">Ride Time</div></div>
+        <div class="bg-box"><div class="bg-v" id="fs-s">0.0</div><div class="bg-u">km/h</div><div class="bg-l" data-k="l_avgspd">Avg Speed</div></div>
+        <div class="bg-box"><div class="bg-v" id="fs-e">0</div><div class="bg-u">m</div><div class="bg-l" data-k="l_elevstat">Elevation</div></div>
+        <div class="bg-box"><div class="bg-v" id="fs-c">0</div><div class="bg-u">kcal</div><div class="bg-l" data-k="l_cal">Calories</div></div>
+        <div class="bg-box"><div class="bg-v" id="fs-m">0.0</div><div class="bg-u">km/h</div><div class="bg-l" data-k="l_max">Max Speed</div></div>
+      </div>
+      <div class="sec-h" data-k="l_visited">Visited Stops</div>
+      <div class="vis-list" id="vis-list"></div>
+    </div>
+
+  </div><!-- /panels -->
+</div><!-- /app -->
+
+<script>
+// ── TRANSLATIONS ─────────────────────────────────────────────
+var TR={
+  en:{splash_btn:"🚴 Start Adventure",t_track:"Tracker",t_guide:"Guide",t_tours:"Tours",t_nature:"Nature",t_stats:"Stats",l_time:"time",l_stops:"stops",l_progress:"Tour progress",l_elev:"🏔 ELEVATION PROFILE · ~12 km",l_guide_h:"🚴 EBIKE TOUR · STOP GUIDE",l_tours_ttl:"eBike Adventures",l_tours_pick:"Choose Your Route",l_tour_btn:"🚴 Start This Tour",l_nat_sub:"National Park · Adriatic Sea · Croatia",l_safety:"⚠️ Safety & Essential Tips",l_water_t:"Water Warning — Carry 2L Minimum",l_water_x:"No drinking water sources on the lake cycling route. Bring at least 2 litres per person. Refill only at Pomena (Hotel Odysseus) or Polače harbour. Dehydration risk HIGH in summer.",l_heat_t:"Heat Warning — Goveđari Interior",l_heat_x:"The interior around Goveđari has NO sea breeze. Temperatures regularly exceed 38°C with high humidity. Ride before 10:00 or after 17:00. Heat stroke: dizziness, nausea, confusion.",l_lakes:"The Lakes",l_depth:"Max depth",l_forest:"Forest cover",l_species:"Protected Marine Species",sp1:"Endemic Jellyfish — found nowhere else on Earth",sp2:"World's Largest Bushy Coral Reef",sp3:"Noble Pen Shell ⛔ STRICTLY PROTECTED",sp4:"Scallop — largest Adriatic population in Malo jezero",sp5:"Date Mussel ⛔ STRICTLY PROTECTED",l_veg:"Forest Vegetation",l_greek:"Greek heritage",l_oak_t:"Holly Oak (Holm Oak)",l_pine:"Dominant tree covering most of the park. Brought to Mljet by the ancient Greeks. Bluish-green needles 6–10 cm, grows to 20 m.",l_oak:"Evergreen oak with broad spherical crown, dark grey cracked bark, leathery leaves to 7 cm. Produces acorns.",l_hist:"Brief History",l_hist_t:"From Illyrians to Croatia",l_hist_x:"Inhabited since the 2nd millennium BC. Romans built the third largest Adriatic palace here. In 1151 Benedictine monks built St. Mary's Monastery. The island passed through Republic of Ragusa, Napoleonic France, Austria-Hungary, Italy, Yugoslavia, and became part of Croatia. National Park since 1960.",l_stats_h:"Tour Summary",l_dist:"Distance",l_ridetime:"Ride Time",l_avgspd:"Avg Speed",l_elevstat:"Elevation",l_cal:"Calories",l_max:"Max Speed",l_visited:"Visited Stops",gps_on:"GPS active",gps_off:"GPS off",btn_start:"🚴 Start eBike Tour",btn_pause:"⏸ Pause",btn_resume:"▶ Resume",btn_end:"⏹ End Tour",btn_map:"🗺️ Open in Google Maps",toast_start:"Tour started!",toast_start_x:"GPS active. Enjoy your ride!",toast_end:"Tour complete!",alert_hint:"— open Guide for full info!"},
+  hr:{splash_btn:"🚴 Pokreni Avanturu",t_track:"Tracker",t_guide:"Vodič",t_tours:"Ture",t_nature:"Priroda",t_stats:"Statistike",l_time:"vrijeme",l_stops:"postaje",l_progress:"Napredak ture",l_elev:"🏔 PROFIL VISINE · ~12 km",l_guide_h:"🚴 EBIKE TURA · VODIČ POSTAJA",l_tours_ttl:"eBike Avanture",l_tours_pick:"Odaberite Rutu",l_tour_btn:"🚴 Pokreni Ovu Turu",l_nat_sub:"Nacionalni Park · Jadransko More · Hrvatska",l_safety:"⚠️ Sigurnost i Važni Savjeti",l_water_t:"Upozorenje: Voda — Min. 2L",l_water_x:"Na ruti oko jezera NEMA pitke vode. Min. 2 litre po osobi. Punjenje samo u Pomeni ili luci Polače. Rizik dehidracije VISOK ljeti.",l_heat_t:"Upozorenje: Vrućina — Unutrašnjost",l_heat_x:"Unutrašnjost oko Goveđara NEMA morskog povjetarca. Temperature redovito prelaze 38°C. Vozite prije 10h ili poslije 17h.",l_lakes:"Jezera",l_depth:"Maks. dubina",l_forest:"Šumska površina",l_species:"Zaštićene Morske Vrste",sp1:"Endemska meduza — nigdje drugdje na svijetu",sp2:"Najveći greben kamenog koralja na svijetu",sp3:"Plemenita periska ⛔ STROGO ZAŠTIĆENA",sp4:"Jakobova kapica — najveća jadranska populacija",sp5:"Prstac ⛔ STROGO ZAŠTIĆENA VRSTA",l_veg:"Šumska Vegetacija",l_greek:"Grčka baština",l_oak_t:"Hrast česvina (crnika)",l_pine:"Dominantno stablo parka. Alepski bor donesen od starih Grka. Iglice 6–10 cm, do 20 m visine.",l_oak:"Zimzeleni hrast široke krošnje, tamnosive kore i kožastih listova do 7 cm. Rodi žirom.",l_hist:"Kratka Povijest",l_hist_t:"Od Ilira do Hrvatske",l_hist_x:"Nastanjen od 2. tisućljeća pr. Kr. (Iliri). Rimljani sagradili 3. najveću palaču na Jadranu. 1151. benediktinci grade samostan sv. Marije. Prolazi kroz Dubrovačku Republiku, Napoleona, Austro-Ugarsku, Italiju, Jugoslaviju. Nacionalni park od 1960.",l_stats_h:"Pregled Ture",l_dist:"Udaljenost",l_ridetime:"Vrijeme Vožnje",l_avgspd:"Prosj. Brzina",l_elevstat:"Uspon",l_cal:"Kalorije",l_max:"Maks. Brzina",l_visited:"Posjećene Postaje",gps_on:"GPS aktivan",gps_off:"GPS isklj.",btn_start:"🚴 Pokreni eBike Turu",btn_pause:"⏸ Pauza",btn_resume:"▶ Nastavi",btn_end:"⏹ Završi",btn_map:"🗺️ Otvori u Google Maps",toast_start:"Tura pokrenuta!",toast_start_x:"GPS aktivan. Uživajte!",toast_end:"Tura završena!",alert_hint:"— otvorite Vodič za više!"},
+  sl:{splash_btn:"🚴 Začni Pustolovščino",t_track:"Tracker",t_guide:"Vodič",t_tours:"Ture",t_nature:"Narava",t_stats:"Statistike",l_time:"čas",l_stops:"postaje",l_progress:"Napredek ture",l_elev:"🏔 VIŠINSKI PROFIL · ~12 km",l_guide_h:"🚴 EBIKE TURA · VODIČ POSTAJ",l_tours_ttl:"eBike Pustolovine",l_tours_pick:"Izberi Turo",l_tour_btn:"🚴 Začni To Turo",l_nat_sub:"Narodni Park · Jadransko Morje · Hrvaška",l_safety:"⚠️ Varnost in Pomembni Nasveti",l_water_t:"Opozorilo: Voda — Vsaj 2L",l_water_x:"Na kolesarski poti ob jezeru NI pitne vode. Vsaj 2 litra na osebo. Polnjenje samo v Pomeni ali pristanišču Polače. Tveganje dehidracije VISOKO poleti.",l_heat_t:"Opozorilo: Vročina — Notranjost",l_heat_x:"Okolica vasi Goveđari NIMA morskega vetra. Temperature redno presegajo 38°C. Kolesarite pred 10h ali po 17h.",l_lakes:"Jezera",l_depth:"Maks. globina",l_forest:"Pokritost z gozdom",l_species:"Varovane Morske Vrste",sp1:"Endemska meduza — ni je nikjer drugje na svetu",sp2:"Največji greben bušastega koralja na svetu",sp3:"Plemenita periska ⛔ STROGO VAROVANA",sp4:"Jakobova kapica — največja jadranska populacija",sp5:"Prstac ⛔ STROGO VAROVANA VRSTA",l_veg:"Gozdna Vegetacija",l_greek:"Grška dediščina",l_oak_t:"Hrast česvina (crnika)",l_pine:"Prevladujoče drevo v parku. Alepski bor so prinesli stari Grki. Iglice 6–10 cm, zraste do 20 m.",l_oak:"Zimzeleni hrast s široko krošnjo, temno sivo razpokano lubjo in usnjatimi listi do 7 cm.",l_hist:"Kratka Zgodovina",l_hist_t:"Od Ilirov do Hrvaške",l_hist_x:"Poseljen od 2. tisočletja pr. n. š. (Iliri). Rimljani zgradili 3. največjo palačo na Jadranu. Leta 1151 benediktinci zgradijo samostan sv. Marije. Otok je bil del Dubrovniške republike, napoleonske Francije, Avstrije, Italije, Jugoslavije. Narodni park od 1960.",l_stats_h:"Povzetek Ture",l_dist:"Razdalja",l_ridetime:"Čas Vožnje",l_avgspd:"Povp. Hitrost",l_elevstat:"Vzpon",l_cal:"Kalorije",l_max:"Maks. Hitrost",l_visited:"Obiskane Postaje",gps_on:"GPS aktiven",gps_off:"GPS izklop",btn_start:"🚴 Začni eBike Turo",btn_pause:"⏸ Pavza",btn_resume:"▶ Nadaljuj",btn_end:"⏹ Zaključi",btn_map:"🗺️ Odpri v Google Maps",toast_start:"Tura začeta!",toast_start_x:"GPS aktivno. Srečno kolesarjenje!",toast_end:"Tura zaključena!",alert_hint:"— odprite Vodič za več!"},
+  de:{splash_btn:"🚴 Abenteuer starten",t_track:"Tracker",t_guide:"Guide",t_tours:"Touren",t_nature:"Natur",t_stats:"Statistik",l_time:"Zeit",l_stops:"Stopps",l_progress:"Tour-Fortschritt",l_elev:"🏔 HÖHENPROFIL · ~12 km",l_guide_h:"🚴 EBIKE-TOUR · STATIONEN-GUIDE",l_tours_ttl:"eBike Abenteuer",l_tours_pick:"Route wählen",l_tour_btn:"🚴 Diese Tour starten",l_nat_sub:"Nationalpark · Adria · Kroatien",l_safety:"⚠️ Sicherheit & Wichtige Tipps",l_water_t:"Wasserwarnung — mind. 2L",l_water_x:"Keine Trinkwasserquellen auf der Seeroute. Mindestens 2 Liter pro Person. Auffüllen nur in Pomena oder Hafen Polače. Dehydrierungsrisiko im Sommer HOCH.",l_heat_t:"Hitzewarnung — Innenbereich",l_heat_x:"Das Innere rund um Goveđari hat KEINEN Meereswind. Temperaturen oft über 38°C. Fahren Sie vor 10:00 oder nach 17:00 Uhr.",l_lakes:"Die Seen",l_depth:"Max. Tiefe",l_forest:"Waldbedeckung",l_species:"Geschützte Meeresarten",sp1:"Endemische Qualle — nirgendwo sonst auf der Welt",sp2:"Größtes Buschkorallen-Riff der Welt",sp3:"Edle Steckmuschel ⛔ STRENG GESCHÜTZT",sp4:"Jakobsmuschel — größte Adriapopulation",sp5:"Steindattel ⛔ STRENG GESCHÜTZT",l_veg:"Waldvegetation",l_greek:"Griechisches Erbe",l_oak_t:"Steineiche (Immergrüne Eiche)",l_pine:"Dominierender Baum im Park. Aleppo-Kiefer von den alten Griechen eingeführt. Nadeln 6–10 cm, bis 20 m hoch.",l_oak:"Immergrüne Eiche mit breiter Kugelkrone, dunkelgrauer Borke und lederartigen Blättern bis 7 cm.",l_hist:"Kurzgeschichte",l_hist_t:"Von den Illyrern bis Kroatien",l_hist_x:"Seit dem 2. Jahrtausend v. Chr. besiedelt. Römer bauten den drittgrößten Adriapalast. 1151 gründeten Benediktiner das Kloster St. Maria. Gehörte zu Ragusa, Napoleon, Österreich-Ungarn, Italien, Jugoslawien. Nationalpark seit 1960.",l_stats_h:"Tour-Zusammenfassung",l_dist:"Distanz",l_ridetime:"Fahrzeit",l_avgspd:"Ø Geschw.",l_elevstat:"Höhenmeter",l_cal:"Kalorien",l_max:"Höchstgeschw.",l_visited:"Besuchte Stationen",gps_on:"GPS aktiv",gps_off:"GPS aus",btn_start:"🚴 eBike-Tour starten",btn_pause:"⏸ Pause",btn_resume:"▶ Weiter",btn_end:"⏹ Beenden",btn_map:"🗺️ In Google Maps öffnen",toast_start:"Tour gestartet!",toast_start_x:"GPS aktiv. Viel Spaß!",toast_end:"Tour abgeschlossen!",alert_hint:"— Guide öffnen für Details!"}
+};
+
+// ── DATA ─────────────────────────────────────────────────────
+var CPS=[
+  {id:0,icon:"🏛️",name:"Polače",km:"Start",color:"#E05A3A",
+   lat:42.7570,lng:17.3888,
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Polace_from_sea.jpg/800px-Polace_from_sea.jpg",
+   photoBg:"#1a3020",
+   short:"Roman Palace & Harbour",
+   desc:"Polače is the oldest settlement on Mljet, dating back to Greek and Illyrian times. Here you can see impressive remains of a Late Antiquity palace from the end of the 5th century AD — the third largest in the Adriatic, after the Arena in Pula and Diocletian's Palace in Split. The harbour is one of the safest on the entire Dalmatian coast.",
+   tips:["🏛️ Roman ruins along the waterfront","⛵ Views of islets Tajnik and Ovrata","📸 Perfect panorama of the bay","⚓ Underwater ancient shipwreck sites"],
+   tags:["Roman Palace","5th c. AD","Illyrians","Greeks"],hist:"Illyrians · Romans · Greeks · 5th c. AD"},
+
+  {id:1,icon:"🌊",name:"Veliki most",km:"3.2 km",color:"#0096C7",
+   lat:42.7480,lng:17.4138,
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Mljet_veliki_most.jpg/800px-Mljet_veliki_most.jpg",
+   photoBg:"#041a2e",
+   short:"Tidal Currents & Benedictine Mill",
+   desc:"The gateway between the open sea and Malo jezero. Before 1958 it was shallower, creating powerful tidal currents reversing every 6 hours. Benedictines built a watermill here in the 16th century, powered by these currents. Demolished 1958, rebuilt 2016. Stop and watch the sea flow in and out of the lake.",
+   tips:["🌊 Watch the tidal current flow","🏗️ The rebuilt bridge (2016)","🐠 Excellent marine life spot","🧂 Site of Benedictine salt pans"],
+   tags:["Benedictine Mill","Tidal current","Bridge 2016"],hist:"Benedictines · demolished 1958 · rebuilt 2016"},
+
+  {id:2,icon:"⛪",name:"St. Mary's Isle",km:"5.1 km",color:"#C5A03E",
+   lat:42.7418,lng:17.4418,
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Mljet_benediktiner.jpg/800px-Mljet_benediktiner.jpg",
+   photoBg:"#1a1408",
+   short:"Benedictine Monastery 1177–1198",
+   desc:"On a small islet in Veliko jezero stands the Benedictine monastery with the Church of the Assumption, built 1177–1198. One of Dalmatia's most important cultural centres. Its library was among the richest Benedictine libraries in Dalmatia. Notable monks: poets Mavro Vetranović and Ignjat Đurđević. Closed by Napoleon 1809, returned 1998.",
+   tips:["⛵ Boat ride to the islet (~5 min from shore)","⛪ Romanesque-Renaissance architecture","📚 One of Dalmatia's richest libraries","🏰 Renaissance defensive tower SE corner"],
+   tags:["1177–1198","Benedictines","Romanesque","Renaissance"],hist:"Pope Innocent III · 1198 · closed 1809 · 1998"},
+
+  {id:3,icon:"🧂",name:"Soline",km:"7.8 km",color:"#0096C7",
+   lat:42.7310,lng:17.4668,
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Soline_bay_Mljet.jpg/800px-Soline_bay_Mljet.jpg",
+   photoBg:"#0a1e30",
+   short:"Salt Channel & Scenic Passage",
+   desc:"A tiny village (~30 residents) founded by the Sršen family in 1825. Named after Benedictine-era salt harvesting — the channel mouth is very shallow, perfect for evaporation. The Soline Channel is the main nautical gateway into Veliko jezero. A 5-minute walk from the road leads to a cave with stalactites and stalagmites whose full extent is still unexplored.",
+   tips:["🧂 Named after Benedictine salt pans","🚤 Scenic Soline Channel & sea views","🦇 Cave with stalactites — 5 min walk","📸 Stunning lake views at sunset"],
+   tags:["Salt harvesting","Founded 1825","Soline Channel","Cave"],hist:"Benedictines · Sršen family · 1825"},
+
+  {id:4,icon:"🏨",name:"Pomena",km:"10.3 km",color:"#52B788",
+   lat:42.7447,lng:17.3768,
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Pomena_harbour_Mljet.jpg/800px-Pomena_harbour_Mljet.jpg",
+   photoBg:"#0d2a1a",
+   short:"Hotel Odysseus & eBike Rental",
+   desc:"The youngest settlement on Mljet, grown from the Goveđari fishing community. Hotel Odysseus (1978) is the only hotel on the island (~320 guests). This is where Activemjet eBike rental is located. Nearby are Roman villas (villae rusticae) and hydroarchaeological sites with ancient amphoras in the bay.",
+   tips:["🚴 Activemjet eBike rental here","🏨 Hotel Odysseus — only hotel on Mljet","⚓ Underwater amphora sites in the bay","🌅 Perfect west-facing sunset viewpoint"],
+   tags:["eBike Rental","Hotel Odysseus 1978","Roman villas"],hist:"Goveđari community · Hotel 1978"},
+
+  {id:5,icon:"🌿",name:"Goveđari",km:"12.1 km",color:"#9B7FE0",
+   lat:42.7438,lng:17.4298,
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Govedjari_village_Mljet.jpg/800px-Govedjari_village_Mljet.jpg",
+   photoBg:"#1a0e2e",
+   short:"Ethnographic Village & Pine Forests",
+   desc:"The oldest and best-preserved village on Mljet, officially an ethnographic village. First mentioned 8 April 1793 in a Benedictine settlement agreement. Church of Saint Nicholas built 1927. Surrounded by Aleppo pine and holly oak forests with well-marked hiking trails. NOTE: No sea breeze here — it can be brutally hot midday in summer!",
+   tips:["🌿 Original traditional architecture","⛪ Church of Saint Nicholas (1927)","🚶 Hiking trails in all directions","⚠️ No sea breeze — very hot at midday!"],
+   tags:["Ethnographic village","Settlement 1793","Benedictines"],hist:"Settlement 1793 · Parish founded 1897"}
+];
+
+var TOURS=[
+  {id:0,emoji:"🏞️",name:"Lake Loop Classic",sub:"Velika & Malo jezero Circuit",diff:"d-easy",dl:"EASY",km:"12",time:"2h",elev:"+180m",stops:"6",
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Mljet_national_park_aerial.jpg/800px-Mljet_national_park_aerial.jpg",
+   photoBg:"linear-gradient(160deg,#03045E,#0077B6 50%,#2D5A27)",
+   map:"https://www.openstreetmap.org/export/embed.html?bbox=17.36%2C42.72%2C17.49%2C42.77&layer=mapnik",
+   desc:"The iconic lake circuit — the must-do ride on Mljet. A smooth tarmac path winds around both Veliko and Malo jezero through dense Aleppo pine forests. You'll pass the Benedictine monastery on St. Mary's Isle, the tidal channel at Veliki most, and the salt village of Soline. Suitable for all fitness levels.",
+   stops_list:["🏛️ Polače – Roman palace ruins","🌊 Veliki most – Tidal mill & channel","⛪ St. Mary's Isle – Benedictine monastery","🧂 Soline – Salt village & cave","🏨 Pomena – Hotel Odysseus & eBike rental","🌿 Goveđari – Ethnographic village"]},
+
+  {id:1,emoji:"🗿",name:"Odysseus Cave Adventure",sub:"Gonoturska Špilja & South Coast",diff:"d-med",dl:"MODERATE",km:"18",time:"3h",elev:"+290m",stops:"5",
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Odysseus_cave_Mljet.jpg/800px-Odysseus_cave_Mljet.jpg",
+   photoBg:"linear-gradient(160deg,#1B0036,#3A0068,#0077B6)",
+   map:"https://www.openstreetmap.org/export/embed.html?bbox=17.34%2C42.70%2C17.49%2C42.77&layer=mapnik",
+   desc:"According to legend, the mythical Odysseus sheltered in this stunning sea cave on his journey home. Starting from Pomena, this tour takes you along the south coast ridge with breathtaking Adriatic views, down to Gonoturska Bay and the famous cave. Bring a torch and swimming gear!",
+   stops_list:["🏨 Pomena – Start & End (eBike rental)","🌄 Pomjensko Polje – Interior valley","⛰️ South ridge viewpoint (200m)","🗿 Gonoturska Bay – Odysseus Cave","🏊 Swimming spot – crystal clear Adriatic"]},
+
+  {id:2,emoji:"⛰️",name:"Montokuc Summit Challenge",sub:"253m · Island's Highest Point",diff:"d-hard",dl:"HARD",km:"15",time:"2.5h",elev:"+450m",stops:"4",
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Montokuc_panorama_Mljet.jpg/800px-Montokuc_panorama_Mljet.jpg",
+   photoBg:"linear-gradient(160deg,#1A1A2E,#16213E,#2D5A27)",
+   map:"https://www.openstreetmap.org/export/embed.html?bbox=17.40%2C42.72%2C17.52%2C42.77&layer=mapnik",
+   desc:"The ultimate eBike challenge on Mljet. Climb to Montokuc (253m), the island's highest peak, for a 360° panoramic view over the national park, both lakes, the open Adriatic, and on clear days the Pelješac Peninsula. The ascent is steep — let your eBike motor earn its keep!",
+   stops_list:["🌿 Goveđari – Start & End","🏛️ Soline – Historic village & channel","📡 NP Mljet entrance – Ticket & info","⛰️ Montokuc summit 253m – Panoramic views"]},
+
+  {id:3,emoji:"🌍",name:"Mljet Grand Odyssey",sub:"Full Island Explorer · All Highlights",diff:"d-expert",dl:"EXPERT",km:"32",time:"5h",elev:"+680m",stops:"8",
+   photo:"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Mljet_island_from_above.jpg/800px-Mljet_island_from_above.jpg",
+   photoBg:"linear-gradient(160deg,#0D0D0D,#1B0036,#03045E,#2D5A27)",
+   map:"https://www.openstreetmap.org/export/embed.html?bbox=17.25%2C42.68%2C17.60%2C42.79&layer=mapnik",
+   desc:"The complete Mljet experience in one epic day. Covering every major highlight: Roman palaces, Benedictine monastery, both lakes, the Odysseus Cave, Montokuc summit, and the wild eastern island. Designed for experienced cyclists with good eBike battery management. Start at sunrise.",
+   stops_list:["🏛️ Polače – Roman palace start","⛪ St. Mary's Isle monastery","🗿 Odysseus Cave (Gonoturska)","⛰️ Montokuc summit (253m)","🌿 Goveđari ethnographic village","🧂 Soline salt village","🏨 Pomena – midpoint rest & refuel","🚢 Sobra – ferry port (optional end)"]}
+];
+
+// Real GPS route – Lake Loop Classic, tracing around both lakes
+var SIM=[
+  [42.7570,17.3888], // 0  Polače (start)
+  [42.7548,17.3868],
+  [42.7520,17.3840],
+  [42.7500,17.3800],
+  [42.7472,17.3778],
+  [42.7447,17.3768], // 5  Pomena
+  [42.7430,17.3800],
+  [42.7410,17.3860],
+  [42.7400,17.3930],
+  [42.7395,17.4000],
+  [42.7402,17.4070], // 10
+  [42.7415,17.4120],
+  [42.7445,17.4135],
+  [42.7480,17.4138], // 13 Veliki most
+  [42.7490,17.4155],
+  [42.7495,17.4200],
+  [42.7488,17.4255],
+  [42.7472,17.4300],
+  [42.7452,17.4340],
+  [42.7435,17.4370],
+  [42.7418,17.4418], // 20 St. Mary isle view
+  [42.7400,17.4455],
+  [42.7380,17.4495],
+  [42.7358,17.4550],
+  [42.7338,17.4610],
+  [42.7315,17.4650],
+  [42.7310,17.4668], // 26 Soline
+  [42.7308,17.4620],
+  [42.7318,17.4555],
+  [42.7335,17.4480],
+  [42.7355,17.4405],
+  [42.7375,17.4345],
+  [42.7395,17.4318],
+  [42.7418,17.4300],
+  [42.7438,17.4298], // 34 Goveđari
+  [42.7452,17.4255],
+  [42.7462,17.4200],
+  [42.7468,17.4140],
+  [42.7465,17.4075],
+  [42.7460,17.4010],
+  [42.7452,17.3950],
+  [42.7445,17.3890],
+  [42.7458,17.3835],
+  [42.7488,17.3838],
+  [42.7520,17.3852],
+  [42.7548,17.3868],
+  [42.7570,17.3888]  // 46 Back to Polače
+];
+var EX=[0,7,15,24,34,42,49,56,63,70,77,84,92,100,108,117,127,136,145,154,163,172,181,190,197,205,213,221,229,237,245,252,259,266,273,281,289,297,305,313,320,326,331,336,340,345,350];
+var EY=[36,35,33,31,28,22,18,16,14,15,16,17,18,16,14,12,11,11,12,15,18,20,23,25,26,27,28,27,26,24,22,20,18,17,16,15,16,17,18,21,24,27,30,32,33,34,36];
+
+// ── STATE ─────────────────────────────────────────────────────
+var lang='en', tourActive=false, paused=false, startTime=null;
+var timerInt=null, simInt=null, simIdx=0;
+var dist=0, elev=0, cal=0, maxSpd=0, bat=100;
+var visited=[], realLat=42.7436, realLon=17.5280;
+var toastTimer=null, sosTimer=null, sosProg=0;
+var wxIdx=0;
+
+// ── HELPERS ───────────────────────────────────────────────────
+function L(k){return (TR[lang]||TR.en)[k]||TR.en[k]||k;}
+function el(id){return document.getElementById(id);}
+function set(id,v){var e=el(id);if(e)e.textContent=v;}
+
+// ── LANGUAGE ─────────────────────────────────────────────────
+function setLang(code){
+  lang=code;
+  document.querySelectorAll('[data-lang]').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-lang')===code);
+  });
+  el('s-btn').textContent=L('splash_btn');
+  if(el('app').classList.contains('show')) applyUI();
+}
+
+function applyUI(){
+  // All data-k elements
+  document.querySelectorAll('[data-k]').forEach(function(e){
+    var v=(TR[lang]||TR.en)[e.getAttribute('data-k')];
+    if(v!==undefined) e.textContent=v;
+  });
+  set('g-lbl', tourActive ? L('gps_on') : L('gps_off'));
+  set('btn-go', L('btn_start'));
+  set('btn-pause', paused ? L('btn_resume') : L('btn_pause'));
+  set('btn-end', L('btn_end'));
+  set('btn-map', L('btn_map'));
+  buildGuide();
+  buildTours();
+  buildVisited();
+}
+
+// ── PANELS ───────────────────────────────────────────────────
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  el('panel-'+name).classList.add('on');
+  var tab=document.querySelector('.tab[data-panel="'+name+'"]');
+  if(tab) tab.classList.add('on');
+  // Leaflet needs size refresh when becoming visible
+  if(name==='tracker' && lmap){
+    setTimeout(function(){lmap.invalidateSize();},50);
+  }
+}
+
+// ── GUIDE ────────────────────────────────────────────────────
+function buildGuide(){
+  el('guide-list').innerHTML=CPS.map(function(c,i){
+    var imgHtml='<div class="g-img-wrap">'
+      +'<img src="'+c.photo+'" alt="'+c.name+'" class="g-img-photo" '
+      +'onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'" loading="lazy"/>'
+      +'<div class="g-img-fallback" style="background:linear-gradient(135deg,'+c.photoBg+',#060E14);display:none">'+c.icon+'</div>'
+      +'</div>';
+    return '<div class="g-card" id="gc'+i+'">'
+      +'<div class="g-head" onclick="toggleCard('+i+')">'
+      +'<div class="g-num" style="background:'+c.color+'">'+( i+1)+'</div>'
+      +'<div style="flex:1"><div class="g-ttl">'+c.icon+' '+c.name+'</div><div class="g-sub">'+c.short+'</div></div>'
+      +'<div class="g-km">'+c.km+'</div><div class="g-chev">▼</div>'
+      +'</div>'
+      +'<div class="g-body">'
+      +imgHtml
+      +'<p>'+c.desc+'</p>'
+      +'<div class="g-hist">📜 '+c.hist+'</div>'
+      +c.tips.map(function(t){return '<div class="tip-item">'+t+'</div>';}).join('')
+      +'<div class="tags">'+c.tags.map(function(t){return '<span class="tag">'+t+'</span>';}).join('')+'</div>'
+      +'</div></div>';
+  }).join('');
+}
+
+function buildTours(){
+  el('tours-list').innerHTML=TOURS.map(function(tr){
+    var bannerStyle=tr.photo
+      ?'background-image:url('+tr.photo+');background-size:cover;background-position:center'
+      :'background:'+tr.photoBg;
+    return '<div class="t-card">'
+      +'<div class="t-banner">'
+      +'<div class="t-bg" style="'+bannerStyle+'"></div>'
+      +'<div class="t-bg-fallback" style="background:'+tr.photoBg+';position:absolute;inset:0;z-index:0"></div>'
+      +'<div class="t-ov"></div>'
+      +'<div class="t-bc"><span class="diff '+tr.diff+'">'+tr.dl+'</span>'
+      +'<div class="t-name">'+tr.emoji+' '+tr.name+'</div>'
+      +'<div class="t-sub">'+tr.sub+'</div></div></div>'
+      +'<div class="t-stats">'
+      +'<div class="ts"><div class="ts-v">'+tr.km+'</div><div class="ts-l">km</div></div>'
+      +'<div class="ts"><div class="ts-v">'+tr.time+'</div><div class="ts-l">time</div></div>'
+      +'<div class="ts"><div class="ts-v">'+tr.elev+'</div><div class="ts-l">climb</div></div>'
+      +'<div class="ts"><div class="ts-v">'+tr.stops+'</div><div class="ts-l">stops</div></div>'
+      +'</div>'
+      +'<div class="t-map-wrap"><iframe src="'+tr.map+'" loading="lazy" allowfullscreen></iframe><div class="t-map-ov"></div></div>'
+      +'<div class="t-body"><p>'+tr.desc+'</p>'
+      +'<ul class="t-stops">'+tr.stops_list.map(function(s){return '<li class="t-stop"><span class="t-dot"></span>'+s+'</li>';}).join('')+'</ul>'
+      +'<button class="t-go-btn" onclick="loadTour('+tr.id+')">'+L('l_tour_btn')+'</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+function toggleCard(i){
+  var card=el('gc'+i);
+  if(card) card.classList.toggle('open');
+}
+
+function openCP(i){
+  showPanel('guide');
+  setTimeout(function(){
+    var c=el('gc'+i);
+    if(c){c.classList.add('open');c.scrollIntoView({behavior:'smooth',block:'start'});}
+  },80);
+}
+
+function loadTour(id){
+  showPanel('tracker');
+  showToast('🚴', TOURS[id].name, 'Tap Start to begin your adventure!');
+}
+
+// ── LEAFLET MAP ───────────────────────────────────────────────
+var lmap=null, userMarker=null, userCircle=null, routePolyline=null, trailPolyline=null;
+var satelliteLayer=null, osmLayer=null, labelsLayer=null, isSatellite=true;
+
+function initMap(){
+  if(lmap) return;
+
+  lmap = L.map('leaflet-map',{
+    center:[42.7420,17.4230],
+    zoom:13,
+    zoomControl:false,
+    attributionControl:true,
+    tap:true,
+    tapTolerance:15
+  });
+
+  // ── Tile layers ──
+  // 1. Esri World Imagery (satellite)
+  satelliteLayer = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution:'© Esri · Maxar · Earthstar Geographics', maxZoom:18, minZoom:10 }
+  );
+
+  // 2. Esri labels overlay (place names on satellite)
+  labelsLayer = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom:18, opacity:0.85 }
+  );
+
+  // 3. OpenStreetMap fallback
+  osmLayer = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution:'© OpenStreetMap contributors', maxZoom:18, minZoom:10 }
+  );
+
+  // Start with satellite
+  satelliteLayer.addTo(lmap);
+  labelsLayer.addTo(lmap);
+
+  // If satellite tiles fail after 5s, switch to OSM automatically
+  var tilesLoaded=false;
+  satelliteLayer.on('tileload',function(){ tilesLoaded=true; });
+  setTimeout(function(){
+    if(!tilesLoaded){
+      lmap.removeLayer(satelliteLayer);
+      lmap.removeLayer(labelsLayer);
+      osmLayer.addTo(lmap);
+      isSatellite=false;
+      var tb=el('map-toggle');
+      if(tb) tb.textContent='🗺 Map';
+    }
+  },5000);
+
+  // ── Layer toggle button ──
+  var toggleBtn=L.control({position:'topright'});
+  toggleBtn.onAdd=function(){
+    var div=L.DomUtil.create('div','leaflet-bar');
+    div.innerHTML='<a id="map-toggle" href="#" style="background:rgba(6,14,20,0.88);color:#00B4D8;font-weight:700;font-size:11px;padding:0 8px;line-height:26px;display:block;white-space:nowrap;text-decoration:none;border:1px solid rgba(0,180,216,0.3);">🛰 Satellite</a>';
+    L.DomEvent.on(div,'click',function(e){
+      L.DomEvent.preventDefault(e);
+      toggleMapType();
+    });
+    return div;
+  };
+  toggleBtn.addTo(lmap);
+
+  // ── Zoom control ──
+  L.control.zoom({position:'bottomright'}).addTo(lmap);
+
+  // ── Full route polyline (dashed white outline for visibility) ──
+  L.polyline(SIM,{
+    color:'rgba(255,255,255,0.5)',
+    weight:7,
+    dashArray:'1,1',
+    lineCap:'round'
+  }).addTo(lmap);
+
+  // ── Route inner line (colored) ──
+  routePolyline = L.polyline(SIM,{
+    color:'#00B4D8',
+    weight:4,
+    opacity:0.85,
+    dashArray:'10,6',
+    lineCap:'round'
+  }).addTo(lmap);
+
+  // ── Animated trail that fills in as user rides ──
+  trailPolyline = L.polyline([SIM[0]],{
+    color:'#52B788',
+    weight:5,
+    opacity:1,
+    lineCap:'round'
+  }).addTo(lmap);
+
+  // ── Checkpoint markers ──
+  CPS.forEach(function(cp,i){
+    var icon=L.divIcon({
+      html:'<div class="cp-marker" style="background:'+cp.color+'" onclick="openCP('+i+')">'+cp.icon+'</div>',
+      className:'',
+      iconSize:[32,32],
+      iconAnchor:[16,16]
+    });
+    var m=L.marker([cp.lat,cp.lng],{icon:icon}).addTo(lmap);
+    m.bindPopup(
+      '<div style="font-weight:700;font-size:13px;margin-bottom:3px">'+cp.icon+' '+cp.name+'</div>'
+      +'<div style="font-size:11px;color:#8DAAB5;margin-bottom:4px">'+cp.short+'</div>'
+      +'<div style="font-size:11px;color:#00B4D8;cursor:pointer" onclick="openCP('+i+');document.querySelector(\'.leaflet-popup-close-button\').click()">📖 Open guide →</div>',
+      {maxWidth:210,className:''}
+    );
+    m.on('click',function(){ m.openPopup(); });
+  });
+
+  // ── User position marker ──
+  var uIcon=L.divIcon({
+    html:'<div class="user-marker-dot"></div>',
+    className:'',iconSize:[18,18],iconAnchor:[9,9]
+  });
+  userMarker=L.marker(SIM[0],{icon:uIcon,zIndexOffset:1000}).addTo(lmap);
+  userMarker.setOpacity(0);
+
+  userCircle=L.circle(SIM[0],{
+    radius:80,color:'#52B788',fillColor:'#52B788',
+    fillOpacity:0.15,weight:0
+  }).addTo(lmap);
+  userCircle.setStyle({opacity:0,fillOpacity:0});
+
+  // ── Fit to route bounds ──
+  lmap.fitBounds(routePolyline.getBounds(),{padding:[40,40]});
+
+  // Fix rendering after display
+  setTimeout(function(){ lmap.invalidateSize(); },250);
+}
+
+function toggleMapType(){
+  if(!lmap) return;
+  isSatellite=!isSatellite;
+  var btn=el('map-toggle');
+  if(isSatellite){
+    lmap.removeLayer(osmLayer);
+    satelliteLayer.addTo(lmap);
+    labelsLayer.addTo(lmap);
+    // Ensure route is on top
+    if(routePolyline) routePolyline.bringToFront();
+    if(trailPolyline) trailPolyline.bringToFront();
+    if(btn) btn.textContent='🛰 Satellite';
+  } else {
+    lmap.removeLayer(satelliteLayer);
+    lmap.removeLayer(labelsLayer);
+    osmLayer.addTo(lmap);
+    if(routePolyline) routePolyline.bringToFront();
+    if(trailPolyline) trailPolyline.bringToFront();
+    if(btn) btn.textContent='🗺 Map';
+  }
+}
+
+// ── TOUR CONTROL ─────────────────────────────────────────────
+function startTour(){
+  tourActive=true; paused=false; startTime=Date.now();
+  simIdx=0; dist=0; elev=0; cal=0; maxSpd=0; bat=100; visited=[];
+  el('gdot').classList.add('on');
+  set('g-lbl', L('gps_on'));
+  el('btn-go').style.display='none';
+  el('ctrl-active').style.display='flex';
+  set('btn-pause', L('btn_pause'));
+  set('btn-end', L('btn_end'));
+  el('v-bat').textContent='100%';
+  el('v-bat').style.color='#52B788';
+
+  // Show user marker, reset trail
+  if(userMarker) userMarker.setOpacity(1);
+  if(userCircle) userCircle.setStyle({opacity:1,fillOpacity:0.12});
+  if(trailPolyline) trailPolyline.setLatLngs([SIM[0]]);
+  if(lmap) lmap.flyTo(SIM[0],14,{duration:1.5});
+  el('elev-ind').style.display='block';
+
+  timerInt=setInterval(tickTimer, 1000);
+  simInt=setInterval(tickSim, 700);
+  showToast('🚴', L('toast_start'), L('toast_start_x'));
+}
+
+function pauseTour(){
+  paused=!paused;
+  set('btn-pause', paused ? L('btn_resume') : L('btn_pause'));
+}
+
+function stopTour(){
+  tourActive=false; paused=false;
+  clearInterval(timerInt); clearInterval(simInt);
+  el('btn-go').style.display='';
+  el('ctrl-active').style.display='none';
+  el('gdot').classList.remove('on');
+  set('g-lbl', L('gps_off'));
+  // Zoom map back to show full route
+  if(lmap && routePolyline){
+    lmap.fitBounds(routePolyline.getBounds(),{padding:[20,20]});
+  }
+  updateFinalStats();
+  buildVisited();
+  showToast('🏁', L('toast_end'), dist.toFixed(1)+' km · '+visited.length+'/6 stops · 🔋'+Math.round(bat)+'%');
+  showPanel('stats');
+}
+
+// ── SIMULATION ────────────────────────────────────────────────
+function tickSim(){
+  if(paused||!tourActive) return;
+  simIdx=(simIdx+1)%SIM.length;
+  var lat=SIM[simIdx][0], lng=SIM[simIdx][1];
+
+  // Move Leaflet user marker
+  if(userMarker){ userMarker.setLatLng([lat,lng]); }
+  if(userCircle){ userCircle.setLatLng([lat,lng]); }
+  // Extend trail
+  if(trailPolyline){ trailPolyline.addLatLng([lat,lng]); }
+  // Pan map to user
+  if(lmap && tourActive){ lmap.panTo([lat,lng],{animate:true,duration:0.6}); }
+
+  dist+=0.046+Math.random()*0.028;
+  if(Math.random()>0.52) elev+=Math.floor(Math.random()*4);
+  cal+=0.09+Math.random()*0.04;
+  bat=Math.max(0,bat-(0.28+Math.random()*0.14));
+  var spd=15+Math.random()*9-4;
+  if(spd>maxSpd) maxSpd=spd;
+  set('v-spd',spd.toFixed(1));
+  set('v-dst',dist.toFixed(1));
+  var batEl=el('v-bat');
+  batEl.textContent=Math.round(bat)+'%';
+  batEl.style.color=bat>50?'#52B788':bat>25?'#F48C06':'#EF233C';
+
+  // Elevation indicator
+  var ei=Math.min(simIdx,EX.length-1);
+  el('elev-ind').setAttribute('cx',EX[ei]);
+  el('elev-ind').setAttribute('cy',EY[ei]);
+
+  var pct=Math.min(100,Math.round(simIdx/(SIM.length-1)*100));
+  el('prog-fill').style.width=pct+'%';
+  set('prog-pct',pct+'%');
+
+  // GPS proximity detection (degrees, ~0.0008° ≈ 90m radius)
+  CPS.forEach(function(c,i){
+    if(visited.indexOf(i)>=0) return;
+    var dlat=lat-c.lat, dlng=lng-c.lng;
+    if(Math.sqrt(dlat*dlat+dlng*dlng)<0.0012){
+      visited.push(i);
+      set('v-cps',visited.length+'/6');
+      triggerCP(c);
+      buildVisited();
+    }
+  });
+}
+
+function tickTimer(){
+  if(paused) return;
+  var s=Math.floor((Date.now()-startTime)/1000);
+  set('v-tim',String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'));
+}
+
+function triggerCP(c){
+  el('cp-alert-wrap').style.display='block';
+  set('ca-ico',c.icon);
+  set('ca-ttl',c.name);
+  set('ca-txt',c.short+' '+L('alert_hint'));
+  if(navigator.vibrate) navigator.vibrate([200,100,200]);
+  showToast(c.icon,'📍 '+c.name,c.short);
+}
+
+function updateFinalStats(){
+  var s=startTime?Math.floor((Date.now()-startTime)/1000):0;
+  var avg=s>0?dist/(s/3600):0;
+  set('fs-d',dist.toFixed(1));
+  set('fs-t',Math.floor(s/60)+':'+String(s%60).padStart(2,'0'));
+  set('fs-s',avg.toFixed(1));
+  set('fs-e',Math.round(elev).toString());
+  set('fs-c',Math.round(cal).toString());
+  set('fs-m',maxSpd.toFixed(1));
+}
+
+function buildVisited(){
+  el('vis-list').innerHTML=CPS.map(function(c,i){
+    var done=visited.indexOf(i)>=0;
+    return '<div class="vis-row">'
+      +'<div class="vis-ball '+(done?'d':'p')+'">'+(done?'✓':i+1)+'</div>'
+      +'<div style="flex:1"><div class="vis-name">'+c.icon+' '+c.name+'</div><div class="vis-sub">'+c.short+'</div></div>'
+      +'<div class="vis-km">'+(done?c.km:'—')+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── WEATHER ──────────────────────────────────────────────────
+var WX=[
+  {t:'28°C',w:'12 km/h NW',u:'UV 8 · High',b:'⚠️ DRINK WATER'},
+  {t:'27°C',w:'16 km/h NW',u:'UV 9 · Very High',b:'🌡️ HEAT RISK'},
+  {t:'29°C',w:'8 km/h W',u:'UV 8 · High',b:'⚠️ DRINK WATER'},
+  {t:'26°C',w:'20 km/h NW',u:'UV 7 · High',b:'💨 MAESTRAL'}
+];
+function startWeather(){
+  updateWX();
+  setInterval(function(){wxIdx=(wxIdx+1)%WX.length;updateWX();},9000);
+}
+function updateWX(){
+  var w=WX[wxIdx];
+  set('wx-t',w.t);set('wx-w',w.w);set('wx-u',w.u);set('wx-b',w.b);
+}
+
+// ── GPS ──────────────────────────────────────────────────────
+function initGPS(){
+  if(!navigator.geolocation) return;
+  navigator.geolocation.watchPosition(function(p){
+    realLat=p.coords.latitude; realLon=p.coords.longitude;
+    el('sos-coords').textContent='GPS: '+realLat.toFixed(5)+'° N, '+realLon.toFixed(5)+'° E\nAccuracy: ±'+Math.round(p.coords.accuracy||8)+'m · NP Mljet';
+    // Show real position on Leaflet map
+    if(lmap && !tourActive && userMarker){
+      userMarker.setLatLng([realLat,realLon]);
+      userMarker.setOpacity(0.8);
+      userCircle.setLatLng([realLat,realLon]);
+      userCircle.setStyle({opacity:1,fillOpacity:0.12});
+      lmap.setView([realLat,realLon],14);
+    }
+    if(tourActive) set('g-lbl','GPS: '+realLat.toFixed(4)+'°N');
+  },function(){},{enableHighAccuracy:true,maximumAge:5000,timeout:10000});
+}
+
+// ── SOS ──────────────────────────────────────────────────────
+function openSOS(){
+  sosProg=0;
+  el('sos-prog').style.width='0%';
+  el('sos-status').style.display='block';
+  el('sos-done').classList.remove('show');
+  el('sos-modal').classList.add('open');
+  if(sosTimer) clearInterval(sosTimer);
+  sosTimer=setInterval(function(){
+    sosProg=Math.min(100,sosProg+2);
+    el('sos-prog').style.width=sosProg+'%';
+    if(sosProg>=100){
+      clearInterval(sosTimer);
+      el('sos-status').style.display='none';
+      el('sos-done').classList.add('show');
+      if(navigator.vibrate) navigator.vibrate([100,50,100,50,300]);
+    }
+  },60);
+}
+function closeSOS(){
+  if(sosTimer) clearInterval(sosTimer);
+  el('sos-modal').classList.remove('open');
+}
+
+// ── TOAST ────────────────────────────────────────────────────
+function showToast(ico,ttl,txt){
+  set('t-ico',ico); set('t-ttl',ttl); set('t-txt',txt);
+  var t=document.querySelector('.toast');
+  t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.classList.remove('show');},4500);
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  // Splash lang buttons
+  document.querySelectorAll('.lang-row .lbtn').forEach(function(b){
+    b.addEventListener('click',function(){setLang(b.getAttribute('data-lang'));});
+  });
+  // Splash start
+  el('s-btn').addEventListener('click',function(){
+    el('splash').classList.add('out');
+    el('app').classList.add('show');
+    applyUI();
+    initGPS();
+    startWeather();
+    // Init Leaflet map after app becomes visible
+    setTimeout(function(){ initMap(); }, 100);
+  });
+  // Header lang
+  document.querySelectorAll('.h-lang .hlb').forEach(function(b){
+    b.addEventListener('click',function(){setLang(b.getAttribute('data-lang'));});
+  });
+  // Tabs
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.addEventListener('click',function(){showPanel(b.getAttribute('data-panel'));});
+  });
+  // Tour buttons
+  el('btn-go').addEventListener('click', startTour);
+  el('btn-pause').addEventListener('click', pauseTour);
+  el('btn-end').addEventListener('click', stopTour);
+  el('btn-map').addEventListener('click',function(){
+    window.open('https://maps.google.com/?q='+realLat+','+realLon+'&z=15','_blank');
+  });
+  // SOS
+  el('sos-open').addEventListener('click', openSOS);
+  el('sos-cancel').addEventListener('click', closeSOS);
+  // Map pins are now Leaflet markers — no SVG pin registration needed
+
+  // Init
+  buildVisited();
+  el('s-btn').textContent=L('splash_btn');
+});
+</script>
+</body>
+</html>
